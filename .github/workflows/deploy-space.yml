@@ -1,0 +1,33 @@
+name: Deploy to Hugging Face Spaces
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hugging-face-deploy
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check deployment secret
+        id: credentials
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -n "$HF_TOKEN" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Add the HF_TOKEN repository secret, then run this workflow again."
+          fi
+      - name: Sync repository to Space
+        if: steps.credentials.outputs.ready == 'true'
+        uses: huggingface/hub-sync@v0.1.0
+        with:
+          github_repo_id: ${{ github.repository }}
+          huggingface_repo_id: anilvarmakav/model-roundtable
+          hf_token: ${{ secrets.HF_TOKEN }}
+          space_sdk: gradio

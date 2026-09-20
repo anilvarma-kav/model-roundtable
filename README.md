@@ -1,8 +1,8 @@
 ---
 title: Model Roundtable
 emoji: 🗣️
-colorFrom: teal
-colorTo: cyan
+colorFrom: green
+colorTo: blue
 sdk: gradio
 sdk_version: 5.49.1
 python_version: 3.12
@@ -183,3 +183,9 @@ This is a learning project for practicing Python, API integration, prompt design
 | Port 7860 is occupied | Gradio prints the chosen local URL; use that address. |
 
 References: [LiteLLM](https://docs.litellm.ai/), [Gradio](https://www.gradio.app/guides/quickstart), [Ollama integration](https://docs.litellm.ai/docs/providers/ollama).
+
+## Automatic deployment from GitHub
+
+The `Deploy to Hugging Face Spaces` workflow syncs `main` to [the hosted app](https://huggingface.co/spaces/anilvarmakav/model-roundtable) on every push. Add a Hugging Face token with write permission for this Space as the GitHub repository Actions secret `HF_TOKEN`. You can also run the workflow manually from the Actions tab.
+
+The workflow uploads repository files; model provider API keys belong in Hugging Face Space secrets. CPU Basic has no hourly charge; creating a standard Gradio Space currently requires an eligible paid Hugging Face plan.

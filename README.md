@@ -12,11 +12,34 @@ pinned: false
 
 # Model Roundtable
 
-A small Python app that lets several language models discuss one topic. OpenAI, Claude, Grok, and a local Ollama model take turns, reading the earlier replies before responding.
+[![Try on Hugging Face Spaces](https://img.shields.io/badge/🤗%20Hugging%20Face-Try%20the%20demo-yellow)](https://huggingface.co/spaces/anilvarmakav/model-roundtable)
 
-Built with **LiteLLM** for provider integration and **Gradio** for the browser interface. Load the saved demo to explore the project without API keys or model downloads.
+**A Python app for exploring how different language models respond to one another in a shared conversation.**
+
+[Open the hosted app](https://huggingface.co/spaces/anilvarmakav/model-roundtable) · [Sample and observations](examples/README.md) · [JSON transcript](examples/roundtable.json) · [Source on GitHub](https://github.com/anilvarma-kav/model-roundtable)
+
+Built with **Python, LiteLLM, Gradio, and Ollama integration**. OpenAI, Claude, Grok, and a local model take turns, reading earlier replies before responding. The interface displays the transcript, reported token usage, and estimated API cost.
+
+## Try the demo — no API keys needed
+
+1. Open [Model Roundtable on Hugging Face](https://huggingface.co/spaces/anilvarmakav/model-roundtable).
+2. Click **Load saved demo · no API calls**.
+3. Read the four perspectives and download the conversation as JSON.
+
+The demo loads a recorded four-provider conversation. It makes no new model requests and requires no model downloads. **Start conversation** runs new requests and requires configured providers. If the Space is sleeping, allow it to start before using the controls.
 
 ![Model Roundtable interface showing a saved conversation](examples/preview.png)
+
+## Engineering highlights
+
+| Area | Implementation |
+| --- | --- |
+| Provider integration | One LiteLLM interface for cloud APIs and local Ollama inference |
+| Orchestration | A sequential round-robin loop with shared context and distinct participant prompts |
+| Context management | Complete recent turns retained within a 12,000-character history budget |
+| Failure handling | Validation before requests, bounded output, timeouts, and preserved partial results |
+| Inspectability | Model names, token usage, estimated costs, truncation notices, and JSON exports |
+| Delivery | Gradio UI, mocked provider tests, and GitHub Actions deployment to Spaces |
 
 ## What it does
 
@@ -46,11 +69,25 @@ Open **http://127.0.0.1:7860**, then click **Load saved demo · no API calls**. 
 
 ## Deploy to Hugging Face Spaces
 
-1. Create a new **Gradio** Space.
-2. Push this repository to the Space repository.
-3. Add any cloud provider keys under **Settings → Variables and secrets**.
+The public demo is deployed at **[anilvarmakav/model-roundtable](https://huggingface.co/spaces/anilvarmakav/model-roundtable)**. The saved demo works without secrets.
 
-The README metadata, `app.py`, and `requirements.txt` are ready for the standard Spaces build. The saved demo works without secrets. Ollama is intended for local use unless the Space has a separately reachable Ollama service.
+To deploy your own copy, create a **Gradio** Space and upload the repository files, or configure the GitHub workflow described below with your Space ID. The README metadata, `app.py`, and `requirements.txt` provide the build configuration.
+
+### Configure live models on a Space
+
+In your Space's **Settings → Variables and secrets**, use **New secret** for each provider you want:
+
+| Secret | Participant |
+| --- | --- |
+| `OPENAI_API_KEY` | OpenAI |
+| `ANTHROPIC_API_KEY` | Claude |
+| `XAI_API_KEY` | Grok |
+
+After the app restarts, select only participants with configured credentials. Model overrides such as `OPENAI_MODEL` belong in **variables**. Do not upload a `.env` file or put API keys in public variables. `HF_TOKEN` is used for deployment and does not replace these provider keys. Cloud model usage is billed separately by each provider.
+
+If the app says **“Add these keys to .env or deselect those models”** while running on Hugging Face, add the named keys as **Space secrets** instead. The `.env` instructions apply to local runs. See the [Spaces configuration guide](https://huggingface.co/docs/hub/spaces-overview#managing-secrets-and-environment-variables).
+
+Ollama is intended for local use unless the Space has a separately reachable Ollama service. A Space cannot reach your laptop's Ollama server through `localhost`; leave **Local GPT-OSS** unchecked on the hosted app unless that service is configured.
 
 ## Run a live conversation
 
@@ -97,7 +134,7 @@ Then set `OLLAMA_MODEL=llama3.2:1b` in `.env` and restart. The participant label
 
 ### Model configuration
 
-| Participant | Default LiteLLM model | Override in `.env` |
+| Participant | Default LiteLLM model | Environment variable |
 | --- | --- | --- |
 | OpenAI | `openai/gpt-4.1-mini` | `OPENAI_MODEL` |
 | Claude | `anthropic/claude-haiku-4-5` | `ANTHROPIC_MODEL` |
@@ -105,6 +142,8 @@ Then set `OLLAMA_MODEL=llama3.2:1b` in `.env` and restart. The participant label
 | Local GPT-OSS | `ollama_chat/gpt-oss:20b` | `OLLAMA_MODEL` |
 
 Bare model names or matching `provider/model` names both work. Model availability depends on your account and may change. `OLLAMA_API_BASE` defaults to `http://localhost:11434`.
+
+Set these values in `.env` locally or in **Space variables** on Hugging Face.
 
 ## How it works
 
@@ -168,17 +207,18 @@ This is a learning project for practicing Python, API integration, prompt design
 - Roles are prompts. Changing the role or speaking order can change the outcome.
 - Cost figures are estimates based on LiteLLM's pricing data. Unknown prices are shown as unavailable, not zero. Local inference has no provider API fee, but uses your hardware and electricity.
 - A mixed cloud/local conversation sends the shared transcript, including local replies, to selected cloud providers. Select only the local participant for local model inference.
-- `.env` is ignored by Git. Keys are read by the Python process and are not included in downloads. The app binds to localhost and does not create a public share link.
-- JSON downloads use temporary files on your machine. Clear those files when no longer needed.
+- `.env` is ignored by Git. Keys are read by the Python process and are not included in downloads. Use Space secrets for hosted credentials.
+- The app binds to `0.0.0.0` for Spaces and containers, with Gradio share links disabled. The hosted Space is publicly accessible; use deployment access controls when enabling paid calls with your keys.
+- JSON exports use temporary files on the app server (your machine when running locally). Download results you want to keep; the hosted app does not provide durable conversation storage.
 
 ## Troubleshooting
 
 | Symptom | What to check |
 | --- | --- |
-| Missing API key | Fill the matching variable in `.env`, restart, or deselect that provider. |
+| Missing API key | Locally, add the key to `.env`. On Hugging Face, add it under Settings → Variables and secrets → New secret. Reload after restart, or deselect that provider. |
 | Authentication or quota error | Check the provider's API key, billing, and rate limits. |
 | Model request fails | Confirm the model name and account access; update the corresponding model variable. |
-| Local model fails or times out | Run `ollama list`, check Ollama is running, or choose a smaller model. |
+| Local model fails or times out | Locally, run `ollama list` and check the server and model. On a Space, deselect Local GPT-OSS unless a reachable Ollama service is configured. |
 | No visible reply | A reasoning model may have used its output budget internally. Try a chat model or increase `max_tokens` in `roundtable.py`. |
 | Port 7860 is occupied | Gradio prints the chosen local URL; use that address. |
 
@@ -188,4 +228,8 @@ References: [LiteLLM](https://docs.litellm.ai/), [Gradio](https://www.gradio.app
 
 The `Deploy to Hugging Face Spaces` workflow syncs `main` to [the hosted app](https://huggingface.co/spaces/anilvarmakav/model-roundtable) on every push. Add a Hugging Face token with write permission for this Space as the GitHub repository Actions secret `HF_TOKEN`. You can also run the workflow manually from the Actions tab.
 
-The workflow uploads repository files; model provider API keys belong in Hugging Face Space secrets. CPU Basic has no hourly charge; creating a standard Gradio Space currently requires an eligible paid Hugging Face plan.
+The workflow is defined in [`.github/workflows/deploy-space.yml`](https://github.com/anilvarma-kav/model-roundtable/blob/main/.github/workflows/deploy-space.yml). For a fork, change `huggingface_repo_id` to your own Space. It syncs repository files; configure model provider keys separately in Space secrets. The hosted demo uses CPU Basic.
+
+## Related project
+
+[AI Decision Room](https://github.com/anilvarma-kav/ai-decision-room) extends the exploration to parallel role analysis, peer critique, and structured decision memos. [Try its hosted demo](https://huggingface.co/spaces/anilvarmakav/ai-decision-room).

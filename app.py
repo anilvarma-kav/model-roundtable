@@ -73,5 +73,8 @@ def build_app():
     return demo
 
 
+demo = build_app()
+
+
 if __name__ == "__main__":
-    build_app().queue().launch(server_name="127.0.0.1", share=False)
+    demo.queue(default_concurrency_limit=1).launch(server_name="0.0.0.0", share=False)

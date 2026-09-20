@@ -1,3 +1,15 @@
+---
+title: Model Roundtable
+emoji: 🗣️
+colorFrom: teal
+colorTo: cyan
+sdk: gradio
+sdk_version: 5.49.1
+python_version: 3.12
+app_file: app.py
+pinned: false
+---
+
 # Model Roundtable
 
 A small Python app that lets several language models discuss one topic. OpenAI, Claude, Grok, and a local Ollama model take turns, reading the earlier replies before responding.
@@ -31,6 +43,14 @@ python app.py
 On Windows, use `python` instead of `python3` and activate with `.venv\Scripts\Activate.ps1` in PowerShell.
 
 Open **http://127.0.0.1:7860**, then click **Load saved demo · no API calls**. The demo reads the included JSON file; it makes no model requests.
+
+## Deploy to Hugging Face Spaces
+
+1. Create a new **Gradio** Space.
+2. Push this repository to the Space repository.
+3. Add any cloud provider keys under **Settings → Variables and secrets**.
+
+The README metadata, `app.py`, and `requirements.txt` are ready for the standard Spaces build. The saved demo works without secrets. Ollama is intended for local use unless the Space has a separately reachable Ollama service.
 
 ## Run a live conversation
 
